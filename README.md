@@ -1,49 +1,49 @@
-## VolunTrack
+# VolunTrack
 
 A full-stack MERN web application designed to streamline community volunteering. VolunTrack empowers organizations to post opportunities, manage volunteer capacities and track community impact in real-time through a secure, PIN-authorized dashboard.
 
 ## Core Features
 
-# Dynamic Analytics Dashboard
+### Dynamic Analytics Dashboard
 
 - The dashboard utilizes React's useEffect to fetch data on initial load and useMemo to cache heavy calculations. It dynamically processes the MongoDB document array to calculate total active opportunities, aggregate pledged hours, and generate category breakdowns.
 
 - Needs Attention Panel: Automatically filters and flags events with "High" or "Critical" urgency scheduled within the next 14 days, ensuring urgent drives (like disaster relief or blood donations) get immediate visibility.
 
-# Smart Feed & Advanced Filtering
+### Smart Feed & Advanced Filtering
 
 - The frontend React components construct dynamic URL query parameters based on user selections (e.g., ?search=blanket&minHours=2&status=Open).
 
 - Backend Processing: The Express controller translates these parameters into complex MongoDB queries using operators like $regex for partial text matching, $gte/$lte for date and hour ranges, and $in for multiple activity types.
 
-# PIN-Secured Organization Controls (CRUD)
+### PIN-Secured Organization Controls (CRUD)
 
 - Instead of a heavy user authentication system, individual opportunity cards are protected by a custom 4-digit PIN created by the organization at the time of posting.
 
 - Security Flow: When a user attempts to edit or delete a post, the React frontend prompts for the PIN. The Express backend uses findById() to retrieve the document, verifies the entered PIN against the stored passcode and only executes the findByIdAndUpdate or deleteOne Mongoose commands if the authorization passes.
 
-# Flexible Capacity & Boolean Logic
+### Flexible Capacity & Boolean Logic
 
 - The platform accommodates both strict numerical requirements (e.g., exactly 5 volunteers for 4 hours) and flexible community drives (e.g., unlimited blanket sorting all day).
 
 - Database Handling: Checking "Flexible Hours" or "Unlimited Capacity" on the frontend forces the numeric inputs to null in the JSON payload. The Mongoose schema stores these as embedded boolean flags (isFlexibleHours, isUnlimitedVolunteers), which the frontend then reads to dynamically swap numerical displays with custom UI text tags.
 
-# Status-Driven UI/UX
+### Status-Driven UI/UX
 
 - The opportunity cards feature color-coded status badges. When an organization changes an event status to "Filled" or "Closed", the React frontend applies conditional Tailwind utility classes to visually dim the inactive cards, keeping user focus on actionable, open opportunities.
 
 ## Tech Stack & Architecture
 
-# Frontend
+### Frontend
 
 - React.js, Tailwind CSS
 - State Management: React Hooks (useState, useEffect, useMemo)
 
-# Backend (Server)
+### Backend (Server)
 
 - Node.js, Express.js (RESTful API architecture)
 
-# Database:
+### Database:
 
 - MongoDB Atlas (Cloud NoSQL database)
 - ODM: Mongoose
