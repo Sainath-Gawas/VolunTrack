@@ -459,7 +459,7 @@ const handleSubmit = async (event) => {
               value={form.contactPerson.name}
               onChange={(e) => handleNestedFieldChange('contactPerson', 'name', e.target.value)}
               className={fieldClass}
-              placeholder="Aisha Dsouza"
+              placeholder="Example"
               required
             />
           </div>
@@ -471,7 +471,7 @@ const handleSubmit = async (event) => {
               value={form.contactPerson.email}
               onChange={(e) => handleNestedFieldChange('contactPerson', 'email', e.target.value)}
               className={fieldClass}
-              placeholder="aisha@example.com"
+              placeholder="example@example.com"
               required
             />
           </div>
