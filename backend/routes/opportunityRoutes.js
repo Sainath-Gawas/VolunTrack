@@ -5,7 +5,8 @@ import {
   createOpportunity, 
   updateOpportunity, 
   deleteOpportunity,
-  validatePasscode
+  validatePasscode,
+  getOpportunityStats
 } from '../controllers/opportunityController.js';
 
 const router = express.Router();
@@ -13,6 +14,9 @@ const router = express.Router();
 router.route('/')
   .get(getOpportunities)
   .post(createOpportunity);
+
+// CRITICAL: This MUST go before the /:id routes!
+router.get('/stats', getOpportunityStats);
 
 router.route('/:id/verify-passcode')
   .post(validatePasscode);

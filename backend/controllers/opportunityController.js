@@ -181,3 +181,137 @@ export const validatePasscode = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get opportunity statistics (MongoDB Aggregation)
+// @route   GET /api/opportunities/stats
+export const getOpportunityStats = async (req, res) => {
+  try {
+    const fourteenDaysFromNow = new Date();
+    fourteenDaysFromNow.setDate(fourteenDaysFromNow.getDate() + 14);
+
+    const stats = await Opportunity.aggregate([
+      {
+        $facet: {
+          // 1. Calculate the category breakdown (Only for Open items)
+          categoryBreakdown: [
+            { $match: { status: 'Open' } },
+            {
+              $group: {
+                _id: '$activityType',
+                count: { $sum: 1 }
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                activityType: '$_id',
+                count: 1
+              }
+            },
+            { $sort: { count: -1 } }
+          ],
+          
+          // 2. Calculate the global totals/summary
+          summary: [
+            {
+              $group: {
+                _id: null,
+                
+                // 1. LIFETIME: Counts every single document in the collection
+                totalLifetime: { $sum: 1 },
+
+                // 2. ACTIVE: Only counts documents where status is 'Open'
+                totalActive: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ['$status', 'Open'] },
+                      1,
+                      0
+                    ]
+                  }
+                },
+
+                // 3. VOLUNTEERS: Only calculates if 'Open' AND NOT 'Unlimited'
+                totalVolunteersNeeded: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $eq: ['$status', 'Open'] },
+                          { $ne: ['$capacity.isUnlimitedVolunteers', true] }
+                        ]
+                      },
+                      {
+                        $max: [
+                          {
+                            $subtract: [
+                              { $ifNull: ['$capacity.volunteersNeeded', 0] },
+                              { $ifNull: ['$capacity.volunteersSignedUp', 0] }
+                            ]
+                          },
+                          0
+                        ]
+                      },
+                      0
+                    ]
+                  }
+                },
+
+                // 4. HOURS: Sums the required hours safely (Only for Open items)
+                totalHoursPledged: {
+                  $sum: {
+                    $cond: [
+                       { $eq: ['$status', 'Open'] },
+                       { $ifNull: ['$capacity.requiredHours', 0] },
+                       0
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              $project: {
+                _id: 0,
+                totalLifetime: 1,
+                totalActive: 1,
+                totalVolunteersNeeded: 1,
+                totalHoursPledged: 1
+              }
+            }
+          ],
+
+          // 3. Find urgent items
+          urgencyItems: [
+            {
+              $match: {
+                status: 'Open',
+                urgency: { $in: ['High', 'Critical'] },
+                date: { $lte: fourteenDaysFromNow, $gte: new Date() }
+              }
+            },
+            { $sort: { date: 1 } },
+            {
+              $project: {
+                title: 1,
+                date: 1,
+                activityType: 1
+              }
+            }
+          ]
+        }
+      }
+    ]);
+
+    // Format the response to match the frontend expectations
+    const responseData = {
+      categoryBreakdown: stats[0].categoryBreakdown,
+      // CRITICAL FIX: Added totalLifetime to the fallback object
+      summary: stats[0].summary[0] || { totalLifetime: 0, totalActive: 0, totalHoursPledged: 0, totalVolunteersNeeded: 0 },
+      urgencyItems: stats[0].urgencyItems
+    };
+
+    res.status(200).json(responseData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
