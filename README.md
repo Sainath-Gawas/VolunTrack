@@ -6,9 +6,13 @@ A full-stack MERN web application designed to streamline community volunteering.
 
 ### Dynamic Analytics Dashboard
 
-- The dashboard utilizes React's useEffect to fetch data on initial load and useMemo to cache heavy calculations. It dynamically processes the MongoDB document array to calculate total active opportunities, aggregate pledged hours, and generate category breakdowns.
-
-- Needs Attention Panel: Automatically filters and flags events with "High" or "Critical" urgency scheduled within the next 14 days, ensuring urgent drives (like disaster relief or blood donations) get immediate visibility.
+- **MongoDB Aggregation:** Dashboard statistics are calculated on the backend using MongoDB's aggregation framework instead of processing the entire opportunity dataset in React.
+- **Single API Request:** The frontend fetches dashboard statistics through the `/api/opportunities/stats` endpoint, reducing multiple API calls.
+- **Aggregation with `$facet`:** A single aggregation pipeline executes three independent operations:
+  - **Summary:** Calculates total active opportunities, total pledged hours, and remaining volunteers needed.
+  - **Category Breakdown:** Groups opportunities by activity type and counts the opportunities in each category.
+  - **Needs Attention:** Identifies open opportunities marked as "High" or "Critical" urgency scheduled within the next 14 days.
+- **Efficient Data Processing:** MongoDB performs filtering, grouping, counting, and calculations on the database side, while React focuses on displaying the returned results.
 
 ### Smart Feed & Advanced Filtering
 
