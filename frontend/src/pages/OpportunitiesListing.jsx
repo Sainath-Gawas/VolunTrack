@@ -146,6 +146,12 @@ const OpportunitiesListing = () => {
     }
   };
 
+  const todayFormatted = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  });
+
   return (
     <div className="flex flex-col gap-8">
       <div className="border-b border-gray-200 pb-8">
@@ -153,7 +159,7 @@ const OpportunitiesListing = () => {
           The opportunity board
         </h1>
         <p className="text-lg text-gray-600">
-          Saturday, 14 November · {opportunities.length} notices pinned up
+          {todayFormatted} · {opportunities.length} notices pinned up
         </p>
       </div>
 

@@ -7,6 +7,9 @@ const OpportunityDetail = () => {
   const navigate = useNavigate();
   const [opportunity, setOpportunity] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasJoined, setHasJoined] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState('');
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -29,6 +32,21 @@ const OpportunityDetail = () => {
   if (!opportunity) {
     return <div className="p-12 text-center text-lg text-red-500">Opportunity not found.</div>;
   }
+
+  const handleJoin = async () => {
+    setJoining(true);
+    setJoinError('');
+    try {
+      const response = await api.post(`/opportunities/${id}/join`);
+      setOpportunity(response.data);
+      setHasJoined(true);
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to join opportunity.';
+      setJoinError(message);
+    } finally {
+      setJoining(false);
+    }
+  };
 
   const dateObj = new Date(opportunity.date);
   const formattedDate = dateObj.toLocaleDateString('en-US', { 
@@ -64,23 +82,62 @@ const OpportunityDetail = () => {
 
         {/* Header Section */}
         <div className="p-6 md:p-8 border-b border-gray-100 bg-gray-50">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <span className="px-3 py-1 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700">
-              {opportunity.activityType}
-            </span>
-            <span className={`px-3 py-1 rounded-lg text-sm font-medium border ${
-              opportunity.urgency === 'Critical' 
-              ? 'bg-red-100 text-red-800 border-red-200' 
-              : opportunity.urgency === 'High'
-              ? 'bg-orange-100 text-orange-800 border-orange-200'
-              : 'bg-green-100 text-green-800 border-green-200'
-            }`}>
-              {opportunity.urgency} Urgency
-            </span>
-            <span className="px-3 py-1 rounded-lg text-sm font-medium bg-blue-50 text-blue-800 border border-blue-200">
-              {opportunity.status}
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="px-3 py-1 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700">
+                {opportunity.activityType}
+              </span>
+              <span className={`px-3 py-1 rounded-lg text-sm font-medium border ${
+                opportunity.urgency === 'Critical' 
+                ? 'bg-red-100 text-red-800 border-red-200' 
+                : opportunity.urgency === 'High'
+                ? 'bg-orange-100 text-orange-800 border-orange-200'
+                : 'bg-green-100 text-green-800 border-green-200'
+              }`}>
+                {opportunity.urgency} Urgency
+              </span>
+              <span className={`px-3 py-1 rounded-lg text-sm font-medium border ${
+                opportunity.status === 'Open'
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : opportunity.status === 'Filled'
+                ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                : 'bg-gray-100 text-gray-500 border-gray-200'
+              }`}>
+                {opportunity.status}
+              </span>
+            </div>
+
+            {/* Header Join Button */}
+            <div>
+              {hasJoined ? (
+                <button
+                  disabled
+                  className="px-5 py-2 rounded-xl font-bold text-sm bg-emerald-600 text-white cursor-default shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  Joined ✓
+                </button>
+              ) : opportunity.status === 'Open' ? (
+                <button
+                  onClick={handleJoin}
+                  disabled={joining}
+                  className="px-5 py-2 rounded-xl font-bold text-sm bg-brand text-white hover:bg-brandHover disabled:opacity-60 transition-all shadow-sm flex items-center justify-center gap-2"
+                >
+                  {joining ? 'Joining...' : 'Join Opportunity'}
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="px-5 py-2 rounded-xl font-medium text-sm bg-gray-200 text-gray-500 cursor-not-allowed"
+                >
+                  {opportunity.status === 'Filled' ? 'Opportunity Filled' : 'Opportunity Closed'}
+                </button>
+              )}
+            </div>
           </div>
+
+          {joinError && (
+            <p className="mb-3 text-sm font-medium text-red-600">{joinError}</p>
+          )}
           
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-gray-900 mb-4 tracking-tight">
             {opportunity.title}
@@ -137,6 +194,36 @@ const OpportunityDetail = () => {
               <p className="text-base font-medium text-gray-900">
                 {isUnlimited ? 'Unlimited capacity' : `${opportunity.capacity?.volunteersSignedUp || 0} / ${opportunity.capacity?.volunteersNeeded || 0} volunteers`}
               </p>
+
+              {/* Capacity Section Action */}
+              <div className="mt-4">
+                {hasJoined ? (
+                  <button
+                    disabled
+                    className="w-full py-2.5 px-4 rounded-lg font-bold text-sm bg-emerald-600 text-white cursor-default shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    Joined ✓
+                  </button>
+                ) : opportunity.status === 'Open' ? (
+                  <button
+                    onClick={handleJoin}
+                    disabled={joining}
+                    className="w-full py-2.5 px-4 rounded-lg font-bold text-sm bg-brand text-white hover:bg-brandHover disabled:opacity-60 transition-all shadow-sm flex items-center justify-center gap-2"
+                  >
+                    {joining ? 'Joining...' : 'Join Opportunity'}
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="w-full py-2.5 px-4 rounded-lg font-medium text-sm bg-gray-200 text-gray-500 cursor-not-allowed"
+                  >
+                    {opportunity.status === 'Filled' ? 'Opportunity Filled' : 'Opportunity Closed'}
+                  </button>
+                )}
+                {joinError && (
+                  <p className="mt-2 text-xs font-medium text-red-600">{joinError}</p>
+                )}
+              </div>
             </div>
 
             <div className="pt-4 border-t border-gray-200">

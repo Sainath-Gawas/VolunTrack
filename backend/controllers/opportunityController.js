@@ -315,3 +315,46 @@ export const getOpportunityStats = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Join an opportunity (Increment volunteers signed up)
+// @route   POST /api/opportunities/:id/join
+export const joinOpportunity = async (req, res) => {
+  try {
+    const opportunity = await Opportunity.findById(req.params.id);
+    if (!opportunity) {
+      return res.status(404).json({ message: 'Opportunity not found' });
+    }
+
+    if (opportunity.status !== 'Open') {
+      return res.status(400).json({ message: 'Opportunity is not open for joining' });
+    }
+
+    const { capacity } = opportunity;
+    if (
+      !capacity?.isUnlimitedVolunteers &&
+      capacity?.volunteersNeeded != null &&
+      (capacity?.volunteersSignedUp || 0) >= capacity?.volunteersNeeded
+    ) {
+      return res.status(400).json({ message: 'Opportunity is already full' });
+    }
+
+    const updatedOpportunity = await Opportunity.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { 'capacity.volunteersSignedUp': 1 } },
+      { new: true }
+    );
+
+    if (
+      !updatedOpportunity.capacity?.isUnlimitedVolunteers &&
+      updatedOpportunity.capacity?.volunteersNeeded != null &&
+      updatedOpportunity.capacity?.volunteersSignedUp >= updatedOpportunity.capacity?.volunteersNeeded
+    ) {
+      updatedOpportunity.status = 'Filled';
+      await updatedOpportunity.save();
+    }
+
+    res.status(200).json(updatedOpportunity);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

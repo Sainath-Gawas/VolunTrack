@@ -6,7 +6,8 @@ import {
   updateOpportunity, 
   deleteOpportunity,
   validatePasscode,
-  getOpportunityStats
+  getOpportunityStats,
+  joinOpportunity
 } from '../controllers/opportunityController.js';
 
 const router = express.Router();
@@ -20,6 +21,8 @@ router.get('/stats', getOpportunityStats);
 
 router.route('/:id/verify-passcode')
   .post(validatePasscode);
+
+router.post('/:id/join', joinOpportunity);
 
 router.route('/:id')
   .get(getOpportunityById)
