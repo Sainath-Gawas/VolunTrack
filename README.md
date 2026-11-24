@@ -9,16 +9,15 @@ A full-stack MERN web application designed to streamline community volunteering.
 - **MongoDB Aggregation:** Dashboard statistics are calculated on the backend using MongoDB's aggregation framework instead of processing the entire opportunity dataset in React.
 - **Single API Request:** The frontend fetches dashboard statistics through the `/api/opportunities/stats` endpoint, reducing multiple API calls.
 - **Aggregation with `$facet`:** A single aggregation pipeline executes three independent operations:
-  - **Summary:** Calculates total active opportunities, total pledged hours, and remaining volunteers needed.
-  - **Category Breakdown:** Groups opportunities by activity type and counts the opportunities in each category.
+  - **Summary:** Calculates total lifetime opportunities, total active (open) opportunities, total pledged hours and remaining volunteers needed (excluding unlimited drives).
+  - **Category Breakdown:** Filters open opportunities, groups them by `activityType` and sorts counts in descending order.
   - **Needs Attention:** Identifies open opportunities marked as "High" or "Critical" urgency scheduled within the next 14 days.
-- **Efficient Data Processing:** MongoDB performs filtering, grouping, counting, and calculations on the database side, while React focuses on displaying the returned results.
+- **Efficient Data Processing:** MongoDB performs filtering, grouping, counting and calculations on the database side, while React focuses on displaying the returned results.
 
 ### Smart Feed & Advanced Filtering
 
-- The frontend React components construct dynamic URL query parameters based on user selections (e.g., ?search=blanket&minHours=2&status=Open).
-
-- Backend Processing: The Express controller translates these parameters into complex MongoDB queries using operators like $regex for partial text matching, $gte/$lte for date and hour ranges, and $in for multiple activity types.
+- The frontend React components construct dynamic URL query parameters based on user selections (e.g., `?q=blanket&minHours=2&status=Open&sort=date&order=asc`).
+- **Backend Processing:** The Express controller translates these parameters into combined MongoDB queries using `$and` alongside `$regex`/`$or` for case-insensitive text search, `$in` for multiple activity types, `$ne` for hiding closed posts, `$gte`/`$lte` for date and hour ranges and `.sort()` for ordering results.
 
 ### PIN-Secured Organization Controls (CRUD)
 
@@ -35,6 +34,11 @@ A full-stack MERN web application designed to streamline community volunteering.
 ### Status-Driven UI/UX
 
 - The opportunity cards feature color-coded status badges. When an organization changes an event status to "Filled" or "Closed", the React frontend applies conditional Tailwind utility classes to visually dim the inactive cards, keeping user focus on actionable, open opportunities.
+
+### One-Click Volunteer Join (Atomic `$inc`)
+
+- Volunteers can join an open opportunity directly from the details page without creating an account.
+- **Database Handling:** Clicking **Join Opportunity** calls `POST /api/opportunities/:id/join`, which validates capacity and uses MongoDB's atomic `$inc` operator to increment `capacity.volunteersSignedUp` by `1`. Once a capped opportunity reaches `volunteersNeeded`, the backend automatically updates its `status` to `"Filled"`.
 
 ## Tech Stack & Architecture
 
@@ -54,7 +58,7 @@ A full-stack MERN web application designed to streamline community volunteering.
 
 ## Database Schema Structure
 
-The Mongoose schema (`Opportunity.js`) utilizes strict type casting, enums, and embedded documents to validate all incoming requests before writing to the database. The schema also implements `{ timestamps: true }` to automatically generate `createdAt` and `updatedAt` fields.
+The Mongoose schema (`Opportunity.js`) utilizes strict type casting, enums and embedded documents to validate all incoming requests before writing to the database. The schema also implements `{ timestamps: true }` to automatically generate `createdAt` and `updatedAt` fields.
 
 **Root Level Fields:**
 
